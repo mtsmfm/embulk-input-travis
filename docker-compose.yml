@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+  embulk:
+    build: .
+    volumes:
+      - .:/app:cached
+      - home:/home/app
+      - vendor:/vendor
+    environment:
+      BUNDLE_PATH: /vendor/bundle
+volumes:
+  home:
+  vendor:
