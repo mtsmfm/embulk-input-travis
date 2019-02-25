@@ -1,0 +1,9 @@
+#! /usr/bin/env ruby
+
+require 'bundler/setup'
+
+$LOAD_PATH << File.join(__dir__, '..', 'lib')
+require 'embulk/input/travis/travis_patch'
+require 'pry'
+binding.pry
+exit 0

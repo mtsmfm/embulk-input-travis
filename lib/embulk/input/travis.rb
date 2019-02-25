@@ -1,3 +1,6 @@
+require 'travis'
+require 'embulk/input/travis/travis_patch'
+
 module Embulk
   module Input
 
@@ -7,15 +10,19 @@ module Embulk
       def self.transaction(config, &control)
         # configuration code:
         task = {
-          "option1" => config.param("option1", :integer),                     # integer, required
-          "option2" => config.param("option2", :string, default: "myvalue"),  # string, optional
-          "option3" => config.param("option3", :string, default: nil),        # string, optional
+          "repo" => config.param("repo", :string),
+          "build_num_from" => config.param("build_num_from", :integer),
+          "build_num_to" => config.param("build_num_to", :integer, nil),
+          "token" => config.param("token", :string, nil),
+          "step" => config.param("step", :integer, 10),
         }
 
         columns = [
-          Column.new(0, "example", :string),
-          Column.new(1, "column", :long),
-          Column.new(2, "value", :double),
+          Column.new(0, "id", :long),
+          Column.new(1, "data", :string),
+          Column.new(2, "log", :string),
+          Column.new(3, "build_number", :long),
+          Column.new(4, "build_data", :string)
         ]
 
         resume(task, columns, 1, &control)
@@ -23,8 +30,14 @@ module Embulk
 
       def self.resume(task, columns, count, &control)
         task_reports = yield(task, columns, count)
+        report = task_reports.first
 
-        next_config_diff = {}
+        next_from = report["not_finished_build_nums"].min || report["build_num_to"] + 1
+
+        next_config_diff = {
+          "build_num_from" => next_from,
+          "build_num_to" => next_from + task["step"]
+        }
         return next_config_diff
       end
 
@@ -39,19 +52,68 @@ module Embulk
       # end
 
       def init
-        # initialization code:
-        @option1 = task["option1"]
-        @option2 = task["option2"]
-        @option3 = task["option3"]
+        if client.access_token
+          Embulk.logger.info { "embulk-input-travis: Logged in as @#{client.user.login}" }
+        end
       end
 
       def run
-        page_builder.add(["example-value", 1, 0.1])
-        page_builder.add(["example-value", 2, 0.2])
+        not_finished_build_nums = []
+
+        Embulk.logger.info { "embulk-input-travis: Start from build_num:[#{build_num_from}] to build_num:[#{build_num_to}]" }
+
+        (build_num_from..build_num_to).each do |build_num|
+          Embulk.logger.info { "embulk-input-travis: Start build_num:[#{build_num}]" }
+
+          repo.session.clear_cache!
+
+          build = repo.build(build_num)
+          unless build&.finished?
+            Embulk.logger.info { "embulk-input-travis: Skip build_num:[#{build_num}]" }
+
+            not_finished_build_nums << build_num
+            next
+          end
+
+          build.jobs.each do |job|
+            Embulk.logger.info { "embulk-input-travis: Start job_id:[#{job.id}]" }
+
+            page_builder.add([
+              job.id,
+              job.to_h.to_json,
+              job.log.body,
+              build.number.to_i,
+              build.to_h.to_json
+            ])
+          end
+        end
+
         page_builder.finish
 
-        task_report = {}
+        task_report = {
+          "build_num_from" => build_num_from,
+          "build_num_to" => build_num_to,
+          "not_finished_build_nums" => not_finished_build_nums
+        }
         return task_report
+      end
+
+      private
+
+      def repo
+        @repo ||= client.repo(task["repo"])
+      end
+
+      def build_num_from
+        @build_num_from ||= task["build_num_from"]
+      end
+
+      def build_num_to
+        @build_num_to ||= (task["build_num_to"] || build_num_from + task["step"])
+      end
+
+      def client
+        @client ||= ::Travis::Client.new(access_token: task["token"])
       end
     end
 

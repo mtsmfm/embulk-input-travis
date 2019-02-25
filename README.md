@@ -1,29 +1,32 @@
 # Travis input plugin for Embulk
 
-TODO: Write short description here and embulk-input-travis.gemspec file.
+Fetch Travis build results
 
 ## Overview
 
-* **Plugin type**: input
-* **Resume supported**: yes
-* **Cleanup supported**: yes
-* **Guess supported**: no
+- **Plugin type**: input
+- **Resume supported**: ?
+- **Cleanup supported**: ?
+- **Guess supported**: ?
 
 ## Configuration
 
-- **option1**: description (integer, required)
-- **option2**: description (string, default: `"myvalue"`)
-- **option3**: description (string, default: `null`)
+- **repo**: Target repository name like `rails/rails` (string, required)
+- **build_num_from**: Build number from (integer, required)
+- **build_num_to**: Build number to (integer, optional)
+- **step**: Amount of builds (string, default: `10`)
+- **token**: Travis API token which can be found on https://travis-ci.org/account/preferences (string, default: `null`)
 
 ## Example
 
 ```yaml
 in:
   type: travis
-  option1: example1
-  option2: example2
+  repo: rails/rails
+  build_num_from: 59100
+  step: 15
+  token: xxxxxxxxxxxxxxxxxxxxxx
 ```
-
 
 ## Build
 

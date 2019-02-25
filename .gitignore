@@ -3,3 +3,5 @@
 /tmp/
 /.bundle/
 /Gemfile.lock
+
+config.yml

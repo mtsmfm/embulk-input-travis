@@ -6,6 +6,9 @@ services:
       - .:/app:cached
       - home:/home/app
       - vendor:/vendor
+      - $HOME/.gitconfig:/home/app/.gitconfig:ro
+      - $HOME/.ssh:/home/app/.ssh:ro
+      - $HOME/.gem:/home/app/.gem
     environment:
       BUNDLE_PATH: /vendor/bundle
 volumes:
