@@ -90,18 +90,6 @@ module Embulk
               ])
             end
           end
-
-          build.jobs.each do |job|
-            Embulk.logger.info { "embulk-input-travis: Start job_id:[#{job.id}]" }
-
-            page_builder.add([
-              job.id,
-              job.to_h.to_json,
-              job.log.body,
-              build.number.to_i,
-              build.to_h.to_json
-            ])
-          end
         end
 
         page_builder.finish

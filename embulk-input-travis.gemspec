@@ -1,7 +1,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "embulk-input-travis"
-  spec.version       = "0.2.0"
+  spec.version       = "0.2.1"
   spec.authors       = [""]
   spec.summary       = "Travis input plugin for Embulk"
   spec.description   = "Loads records from Travis."
