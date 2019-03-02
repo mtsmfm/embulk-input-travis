@@ -67,12 +67,28 @@ module Embulk
 
           repo.session.clear_cache!
 
-          build = repo.build(build_num)
+          build = with_retry { repo.build(build_num) }
           unless build&.finished?
             Embulk.logger.info { "embulk-input-travis: Skip build_num:[#{build_num}]" }
 
             not_finished_build_nums << build_num
             next
+          end
+
+          build.job_ids.each do |job_id|
+            with_retry do
+              job = client.session.find_one(::Travis::Client::Job, job_id)
+
+              Embulk.logger.info { "embulk-input-travis: Start job_id:[#{job.id}]" }
+
+              page_builder.add([
+                job.id,
+                job.to_h.to_json,
+                job.log.body,
+                build.number.to_i,
+                build.to_h.to_json
+              ])
+            end
           end
 
           build.jobs.each do |job|
@@ -114,6 +130,26 @@ module Embulk
 
       def client
         @client ||= ::Travis::Client.new(access_token: task["token"])
+      end
+
+      MAX_RETRY = 5
+
+      def with_retry(&block)
+        retries = 0
+        begin
+          yield
+        rescue => e
+          sleep retries
+
+          if retries < MAX_RETRY
+            retries += 1
+            Embulk.logger.warn { "embulk-input-travis: retry ##{retries}, #{e.message}" }
+            retry
+          else
+            Embulk.logger.error { "embulk-input-travis: retry exhausted ##{retries}, #{e.message}" }
+            raise e
+          end
+        end
       end
     end
 
