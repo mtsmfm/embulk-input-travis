@@ -19,10 +19,11 @@ module Embulk
 
         columns = [
           Column.new(0, "id", :long),
-          Column.new(1, "data", :string),
+          Column.new(1, "data", :json),
           Column.new(2, "log", :string),
-          Column.new(3, "build_number", :long),
-          Column.new(4, "build_data", :string)
+          Column.new(3, "started_at", :timestamp),
+          Column.new(4, "build_number", :long),
+          Column.new(5, "build_data", :json)
         ]
 
         resume(task, columns, 1, &control)
@@ -85,6 +86,7 @@ module Embulk
                 job.id,
                 job.to_h.to_json,
                 job.log.body,
+                job.started_at,
                 build.number.to_i,
                 build.to_h.to_json
               ])

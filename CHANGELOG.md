@@ -1,3 +1,8 @@
+# 0.3.0
+
+- Add started_at
+- Change data and build_data type to json
+
 # 0.2.1
 
 - Fix job inserting twice
