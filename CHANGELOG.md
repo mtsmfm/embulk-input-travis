@@ -1,3 +1,7 @@
+# 0.4.0
+
+- Change data and build_data type to string
+
 # 0.3.0
 
 - Add started_at

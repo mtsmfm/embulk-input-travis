@@ -19,11 +19,11 @@ module Embulk
 
         columns = [
           Column.new(0, "id", :long),
-          Column.new(1, "data", :json),
+          Column.new(1, "data", :string),
           Column.new(2, "log", :string),
           Column.new(3, "started_at", :timestamp),
           Column.new(4, "build_number", :long),
-          Column.new(5, "build_data", :json)
+          Column.new(5, "build_data", :string)
         ]
 
         resume(task, columns, 1, &control)
