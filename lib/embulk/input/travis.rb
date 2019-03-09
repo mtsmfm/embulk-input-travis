@@ -66,8 +66,6 @@ module Embulk
         (build_num_from..build_num_to).each do |build_num|
           Embulk.logger.info { "embulk-input-travis: Start build_num:[#{build_num}]" }
 
-          repo.session.clear_cache!
-
           build = with_retry { repo.build(build_num) }
           unless build&.finished?
             Embulk.logger.info { "embulk-input-travis: Skip build_num:[#{build_num}]" }
@@ -90,6 +88,8 @@ module Embulk
                 build.number.to_i,
                 build.to_h.to_json
               ])
+
+              repo.session.clear_cache!
             end
           end
         end

@@ -1,3 +1,7 @@
+# 0.5.0
+
+- Clear cache on each job
+
 # 0.4.0
 
 - Change data and build_data type to string
