@@ -23,7 +23,8 @@ module Embulk
           Column.new(2, "log", :string),
           Column.new(3, "started_at", :timestamp),
           Column.new(4, "build_number", :long),
-          Column.new(5, "build_data", :string)
+          Column.new(5, "build_data", :string),
+          Column.new(6, "commit_data", :string)
         ]
 
         resume(task, columns, 1, &control)
@@ -74,24 +75,32 @@ module Embulk
             next
           end
 
-          build.job_ids.each do |job_id|
-            with_retry do
-              job = client.session.find_one(::Travis::Client::Job, job_id)
+          build.job_ids.each_slice(5) do |job_ids|
+            job_ids.each do |job_id|
+              with_retry do
+                job = client.session.find_one(::Travis::Client::Job, job_id)
 
-              Embulk.logger.info { "embulk-input-travis: Start job_id:[#{job.id}]" }
+                Embulk.logger.info { "embulk-input-travis: Start job_id:[#{job.id}]" }
 
-              page_builder.add([
-                job.id,
-                job.to_h.to_json,
-                job.log.body,
-                job.started_at,
-                build.number.to_i,
-                build.to_h.to_json
-              ])
-
-              repo.session.clear_cache!
+                page_builder.add([
+                  job.id,
+                  job.to_h.to_json,
+                  job.log.body,
+                  job.started_at,
+                  build.number.to_i,
+                  build.to_h.to_json,
+                  build.commit.to_h.to_json
+                ])
+              end
             end
+
+            Embulk.logger.info { "embulk-input-travis: flush" }
+            page_builder.flush
+            repo.session.clear_cache!
           end
+
+          page_builder.flush
+          repo.session.clear_cache!
         end
 
         page_builder.finish

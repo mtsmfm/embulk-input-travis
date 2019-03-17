@@ -1,3 +1,8 @@
+# 0.6.0
+
+- Add commit_data
+- Flush on each 5 jobs
+
 # 0.5.0
 
 - Clear cache on each job
